@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Premium Pantry Dashboard</title>
+<style>
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+min-height: 100vh;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+position: relative;
+overflow-x: hidden;
+}
+
+/* Premium Blurred Background */
+body::before {
+content: "";
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: url('https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=1600') center/cover;
+filter: blur(8px) brightness(0.7);
+transform: scale(1.1);
+z-index: -1;
+}
+
+/* Loading Animation */
+.loading-overlay {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(255, 255, 255, 0.9);
+backdrop-filter: blur(5px);
+display: none;
+justify-content: center;
+align-items: center;
+z-index: 99999;
+flex-direction: column;
+}
+
+.loading-overlay.active {
+display: flex;
+}
+
+.pantry-loader {
+width: 80px;
+height: 80px;
+border: 5px solid #f3f3f3;
+border-top: 5px solid #ff6b6b;
+border-right: 5px solid #4ecdc4;
+border-bottom: 5px solid #45b7d1;
+border-left: 5px solid #96ceb4;
+border-radius: 50%;
+animation: spin 1.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+}
+
+.loading-text {
+margin-top: 20px;
+font-size: 18px;
+color: #333;
+font-weight: 600;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes spin {
+0% { transform: rotate(0deg); }
+100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+0%, 100% { opacity: 1; }
+50% { opacity: 0.5; }
+}
+
+/* Main Container */
+.dashboard {
+max-width: 1400px;
+margin: 0 auto;
+padding: 20px;
+padding-bottom: 80px;
+position: relative;
+z-index: 1;
+min-height: 100vh;
+}
+
+/* Header with Profile */
+.header {
+background: rgba(255, 255, 255, 0.1);
+backdrop-filter: blur(10px);
+padding: 15px 25px;
+border-radius: 15px;
+margin-bottom: 30px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+color: white;
+border: 1px solid rgba(255, 255, 255, 0.2);
+position: relative;
+z-index: 100;
+}
+
+.header h1 {
+font-size: 28px;
+text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.profile-badge {
+background: rgba(255, 255, 255, 0.2);
+padding: 8px 15px;
+border-radius: 20px;
+font-size: 14px;
+border: 1px solid rgba(255, 255, 255, 0.3);
+display: flex;
+align-items: center;
+gap: 8px;
+}
+
+.profile-badge span {
+font-size: 18px;
+}
+
+/* Profile Menu - BOTTOM RIGHT */
+.profile-container {
+position: fixed;
+bottom: 30px;
+right: 30px;
+z-index: 10000;
+}
+
+.profile-icon {
+width: 60px;
+height: 60px;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 28px;
+font-weight: bold;
+color: white;
+cursor: pointer;
+border: 3px solid rgba(255, 255, 255, 0.5);
+transition: all 0.3s;
+position: relative;
+z-index: 10001;
+box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.profile-icon:hover {
+transform: scale(1.1);
+border-color: white;
+box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.profile-dropdown {
+position: absolute;
+bottom: 70px;
+right: 0;
+background: white;
+border-radius: 12px;
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+display: none;
+min-width: 200px;
+overflow: hidden;
+z-index: 9999;
+border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.profile-dropdown.active {
+display: block;
+animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+from {
+opacity: 0;
+transform: translateY(10px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+.profile-dropdown a {
+padding: 14px 20px;
+display: block;
+color: #333;
+text-decoration: none;
+transition: all 0.3s;
+font-size: 15px;
+cursor: pointer;
+text-align: left;
+width: 100%;
+border: none;
+background: none;
+}
+
+.profile-dropdown a:hover {
+background: #f5f5f5;
+padding-left: 25px;
+}
+
+.profile-dropdown .exit-btn {
+color: #e74c3c;
+font-weight: 600;
+border-bottom: 1px solid #eee;
+}
+
+.profile-dropdown .logout-btn {
+color: #7f8c8d;
+}
+
+/* Add Item Form */
+.add-item-section {
+background: rgba(255, 255, 255, 0.95);
+backdrop-filter: blur(10px);
+padding: 25px;
+border-radius: 15px;
+margin-bottom: 30px;
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+border: 1px solid rgba(255, 255, 255, 0.3);
+position: relative;
+z-index: 90;
+}
+
+.form-title {
+color: #333;
+margin-bottom: 20px;
+font-size: 20px;
+display: flex;
+align-items: center;
+gap: 10px;
+}
+
+.form-title i {
+font-size: 24px;
+}
+
+.item-form {
+display: grid;
+grid-template-columns: 2fr 1fr 1fr 2fr auto;
+gap: 15px;
+align-items: end;
+}
+
+.form-group {
+display: flex;
+flex-direction: column;
+}
+
+.form-group label {
+font-size: 12px;
+color: #666;
+margin-bottom: 5px;
+font-weight: 600;
+text-transform: uppercase;
+}
+
+.form-group input,
+.form-group select {
+padding: 12px;
+border: 2px solid #e0e0e0;
+border-radius: 8px;
+font-size: 14px;
+transition: all 0.3s;
+background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+outline: none;
+border-color: #667eea;
+box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.add-btn {
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+color: white;
+border: none;
+padding: 12px 25px;
+border-radius: 8px;
+font-size: 16px;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.3s;
+height: 45px;
+margin-top: 23px;
+}
+
+.add-btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.add-btn:disabled {
+opacity: 0.6;
+cursor: not-allowed;
+transform: none;
+}
+
+/* Two Column Layout */
+.pantry-columns {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 25px;
+margin-bottom: 30px;
+position: relative;
+z-index: 80;
+}
+
+/* Pantry Sections */
+.pantry-section {
+background: rgba(255, 255, 255, 0.95);
+backdrop-filter: blur(10px);
+border-radius: 15px;
+padding: 20px;
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.section-header {
+display: flex;
+align-items: center;
+gap: 10px;
+margin-bottom: 20px;
+padding-bottom: 15px;
+border-bottom: 2px solid #f0f0f0;
+}
+
+.section-header h2 {
+color: #333;
+font-size: 22px;
+}
+
+.section-header .icon {
+font-size: 28px;
+}
+
+.section-header .badge {
+background: #667eea;
+color: white;
+padding: 5px 10px;
+border-radius: 20px;
+font-size: 12px;
+margin-left: 10px;
+}
+
+/* Items Table */
+.items-table {
+width: 100%;
+border-collapse: collapse;
+}
+
+.items-table th {
+text-align: left;
+padding: 12px 8px;
+color: #666;
+font-weight: 600;
+font-size: 13px;
+text-transform: uppercase;
+border-bottom: 2px solid #f0f0f0;
+}
+
+.items-table td {
+padding: 12px 8px;
+border-bottom: 1px solid #f0f0f0;
+vertical-align: middle;
+}
+
+.items-table tr:last-child td {
+border-bottom: none;
+}
+
+.items-table tr:hover {
+background: rgba(102, 126, 234, 0.05);
+}
+
+/* Quantity Controls */
+.quantity-control {
+display: flex;
+align-items: center;
+gap: 8px;
+flex-wrap: wrap;
+}
+
+.qty-btn {
+width: 36px;
+height: 36px;
+border: none;
+background: #f0f0f0;
+border-radius: 6px;
+cursor: pointer;
+font-weight: bold;
+font-size: 14px;
+transition: all 0.2s;
+}
+
+.qty-btn:hover {
+background: #667eea;
+color: white;
+}
+
+.qty-btn:disabled {
+opacity: 0.5;
+cursor: not-allowed;
+}
+
+.quantity-input {
+width: 80px;
+text-align: center;
+padding: 6px 8px;
+border: 2px solid #e0e0e0;
+border-radius: 6px;
+font-size: 14px;
+font-weight: 600;
+background: white;
+}
+
+.quantity-input:focus {
+outline: none;
+border-color: #667eea;
+box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.qty-value {
+min-width: 50px;
+text-align: center;
+font-weight: 600;
+}
+
+/* Status Indicators */
+.status-badge {
+padding: 4px 12px;
+border-radius: 20px;
+font-size: 12px;
+font-weight: 600;
+display: inline-block;
+}
+
+.status-expired {
+background: #f8d7da;
+color: #721c24;
+animation: pulse-red 2s infinite;
+font-weight: 700;
+}
+
+.status-expiring {
+background: #fee;
+color: #e74c3c;
+animation: pulse-red 2s infinite;
+}
+
+.status-low {
+background: #fff3cd;
+color: #856404;
+animation: pulse-yellow 2s infinite;
+}
+
+.status-out {
+background: #f8d7da;
+color: #721c24;
+}
+
+.status-good {
+background: #d4edda;
+color: #155724;
+}
+
+@keyframes pulse-red {
+0%, 100% { background: #fee; }
+50% { background: #fcc; }
+}
+
+@keyframes pulse-yellow {
+0%, 100% { background: #fff3cd; }
+50% { background: #ffe69c; }
+}
+
+/* Action Buttons */
+.action-btn {
+border: none;
+background: none;
+cursor: pointer;
+font-size: 18px;
+margin: 0 5px;
+padding: 5px;
+border-radius: 5px;
+transition: all 0.2s;
+}
+
+.delete-btn { color: #e74c3c; }
+
+.action-btn:hover {
+background: #f0f0f0;
+transform: scale(1.1);
+}
+
+/* Shopping List */
+.shopping-list-section {
+background: rgba(255, 235, 235, 0.95);
+backdrop-filter: blur(10px);
+border-radius: 15px;
+padding: 20px;
+box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+border: 1px solid rgba(255, 255, 255, 0.3);
+position: relative;
+z-index: 70;
+margin-top: 30px;
+}
+
+.shopping-header {
+display: flex;
+align-items: center;
+gap: 10px;
+margin-bottom: 20px;
+color: #c0392b;
+flex-wrap: wrap;
+}
+
+.shopping-header h2 {
+color: #c0392b;
+}
+
+.shopping-header .badge {
+background: #c0392b;
+}
+
+.shopping-actions {
+display: flex;
+gap: 10px;
+margin-left: auto;
+}
+
+.download-btn {
+background: #27ae60;
+color: white;
+border: none;
+padding: 8px 20px;
+border-radius: 20px;
+cursor: pointer;
+font-size: 14px;
+transition: all 0.2s;
+display: flex;
+align-items: center;
+gap: 8px;
+}
+
+.download-btn:hover {
+background: #2ecc71;
+transform: scale(1.05);
+}
+
+.download-btn:disabled {
+opacity: 0.5;
+cursor: not-allowed;
+}
+
+.shopping-item {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 15px;
+border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+flex-wrap: wrap;
+gap: 10px;
+}
+
+.shopping-item:last-child {
+border-bottom: none;
+}
+
+.shopping-item-left {
+display: flex;
+align-items: center;
+gap: 15px;
+flex-wrap: wrap;
+}
+
+.shopping-item-name {
+font-weight: 600;
+color: #c0392b;
+font-size: 16px;
+}
+
+.shopping-reason {
+font-size: 11px;
+padding: 3px 8px;
+border-radius: 12px;
+background: rgba(0,0,0,0.1);
+color: #666;
+}
+
+.shopping-quantity {
+font-size: 14px;
+color: #7f8c8d;
+margin-right: 10px;
+}
+
+.restore-btn {
+background: #27ae60;
+color: white;
+border: none;
+padding: 6px 15px;
+border-radius: 20px;
+cursor: pointer;
+font-size: 12px;
+transition: all 0.2s;
+}
+
+.restore-btn:hover {
+background: #2ecc71;
+transform: scale(1.05);
+}
+
+/* Empty State */
+.empty-state {
+text-align: center;
+padding: 40px;
+color: #999;
+font-style: italic;
+}
+
+/* Click Outside Overlay */
+.dropdown-overlay {
+display: none;
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+z-index: 9998;
+}
+
+.dropdown-overlay.active {
+display: block;
+}
+
+/* Toast Message */
+.toast-message {
+position: fixed;
+top: 20px;
+right: 20px;
+background: #27ae60;
+color: white;
+padding: 15px 25px;
+border-radius: 10px;
+box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+z-index: 100000;
+animation: slideIn 0.3s ease;
+font-weight: 600;
+}
+
+.toast-message.error {
+background: #e74c3c;
+}
+
+@keyframes slideIn {
+from {
+transform: translateX(100%);
+opacity: 0;
+}
+to {
+transform: translateX(0);
+opacity: 1;
+}
+}
+
+/* Days Left */
+.days-left {
+font-size: 12px;
+color: #7f8c8d;
+margin-left: 5px;
+}
+
+.days-expired {
+color: #e74c3c;
+font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+.item-form {
+grid-template-columns: 1fr;
+}
+
+.add-btn {
+margin-top: 0;
+}
+
+.pantry-columns {
+grid-template-columns: 1fr;
+}
+
+.profile-icon {
+width: 50px;
+height: 50px;
+font-size: 24px;
+}
+
+.profile-container {
+bottom: 20px;
+right: 20px;
+}
+
+.shopping-actions {
+flex-direction: column;
+margin-left: 0;
+}
+
+.quantity-control {
+flex-wrap: wrap;
+}
+
+.qty-btn {
+width: 32px;
+height: 32px;
+font-size: 12px;
+}
+
+.quantity-input {
+width: 70px;
+}
+}
+</style>
+</head>
+<body>
+
+<!-- Dropdown Overlay -->
+<div class="dropdown-overlay" id="dropdownOverlay" onclick="closeProfileDropdown()"></div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+<div class="pantry-loader"></div>
+<div class="loading-text">Organizing your pantry...</div>
+</div>
+
+<div class="dashboard">
+
+<!-- Header -->
+<div class="header">
+<div style="display: flex; align-items: center; gap: 20px;">
+<h1>Premium Pantry</h1>
+</div>
+<div class="profile-badge" id="profileBadge">
+<span id="profileEmoji">🏠</span>
+<span id="profileName">Home Pantry</span>
+</div>
+</div>
+
+<!-- Add Item Form -->
+<div class="add-item-section">
+<div class="form-title">
+<i>📦</i> Add New Item to Pantry
+</div>
+
+<form id="itemForm">
+<div class="item-form">
+<div class="form-group">
+<label>Item Name</label>
+<input type="text" id="itemName" placeholder="e.g., Apples, Chicken, Milk" required>
+</div>
+
+<div class="form-group">
+<label>Quantity</label>
+<input type="number" id="itemQuantity" min="0.5" step="0.5" value="1" required>
+</div>
+
+<div class="form-group">
+<label>Expiry Date (Optional)</label>
+<input type="date" id="expiryDate">
+</div>
+
+<div class="form-group">
+<label>Storage Type</label>
+<select id="storageType" required>
+<option value="refrigerator">🧊 Refrigerator (Fruits, Veggies, Drinks)</option>
+<option value="freezer">❄️ Freezer (Meat, Frozen Foods)</option>
+</select>
+</div>
+
+<button type="submit" class="add-btn" id="addItemBtn">+ Add Item</button>
+</div>
+</form>
+</div>
+
+<!-- Two Column Layout -->
+<div class="pantry-columns">
+<!-- Refrigerator Section -->
+<div class="pantry-section" id="refrigeratorSection">
+<div class="section-header">
+<span class="icon">🧊</span>
+<h2>Refrigerator</h2>
+<span class="badge" id="fridgeCount">0 items</span>
+</div>
+<div style="color: #666; font-size: 13px; margin-bottom: 15px;">
+Vegetables · Fruits · Dairy · Drinks · Condiments
+</div>
+<table class="items-table" id="fridgeTable">
+<thead>
+<tr>
+<th>Item</th>
+<th>Quantity</th>
+<th>Expiry</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="fridgeBody">
+<!-- Items will be inserted here -->
+</tbody>
+</table>
+<div id="fridgeEmpty" class="empty-state" style="display: none;">
+🧊 No items in refrigerator. Add some fresh items!
+</div>
+</div>
+
+<!-- Freezer Section -->
+<div class="pantry-section" id="freezerSection">
+<div class="section-header">
+<span class="icon">❄️</span>
+<h2>Freezer</h2>
+<span class="badge" id="freezerCount">0 items</span>
+</div>
+<div style="color: #666; font-size: 13px; margin-bottom: 15px;">
+Meat · Seafood · Frozen Veggies · Ice Cream
+</div>
+<table class="items-table" id="freezerTable">
+<thead>
+<tr>
+<th>Item</th>
+<th>Quantity</th>
+<th>Expiry</th>
+<th>Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="freezerBody">
+<!-- Items will be inserted here -->
+</tbody>
+</table>
+<div id="freezerEmpty" class="empty-state" style="display: none;">
+❄️ No items in freezer. Add some frozen goods!
+</div>
+</div>
+</div>
+
+<!-- Shopping List Section -->
+<div class="shopping-list-section" id="shoppingSection" style="display: none;">
+<div class="shopping-header">
+<span style="font-size: 24px;">🛒</span>
+<h2>Shopping List</h2>
+<span class="badge" id="shoppingCount">0 items</span>
+<div class="shopping-actions">
+<button class="download-btn" id="downloadShoppingList" onclick="downloadShoppingList()">
+<span>📥</span> Download List
+</button>
+<button class="download-btn" id="emailShoppingList" onclick="emailShoppingList()">
+<span>📧</span> Email List
+</button>
+</div>
+</div>
+<div id="shoppingList">
+<!-- Shopping items will be inserted here -->
+</div>
+</div>
+</div>
+
+<!-- Profile Menu - BOTTOM RIGHT -->
+<div class="profile-container">
+<div class="profile-icon" onclick="toggleProfile(event)">
+👤
+</div>
+<div class="profile-dropdown" id="profileDropdown">
+<a href="javascript:void(0)" class="exit-btn" onclick="handleExitPantry(event)">🏠 Exit Pantry</a>
+<a href="javascript:void(0)" class="logout-btn" onclick="handleLogout(event)">🚪 Logout</a>
+</div>
+</div>
+
+<script>
+// ==================== CONFIGURATION ====================
+const API_BASE = "http://127.0.0.1:5000/api";
+const token = localStorage.getItem("token");
+const userEmail = localStorage.getItem("userEmail");
+
+// Check authentication
+if (!token) {
+    showToast("Please login again", "error");
+    setTimeout(() => {
+        window.location.href = "login.html";
+    }, 1500);
+}
+
+// Get profile from URL
+const urlParams = new URLSearchParams(window.location.search);
+const profile_id = urlParams.get("profile");
+
+if (!profile_id) {
+    showToast("Profile not selected", "error");
+    setTimeout(() => {
+        window.location.href = "selection.html";
+    }, 1500);
+}
+
+// ==================== PROFILE DISPLAY ====================
+const profileEmoji = document.getElementById('profileEmoji');
+const profileName = document.getElementById('profileName');
+
+// Default profile map
+const profileMap = {
+    'home': { emoji: '🏠', name: 'Home Pantry' },
+    'office': { emoji: '🏢', name: 'Office Pantry' },
+    'factory': { emoji: '🏭', name: 'Factory Pantry' },
+    'lab': { emoji: '🍙', name: 'R&D Kitchen' },
+    'test': { emoji: '🧆', name: 'Test Lab' }
+};
+
+// Set profile badge
+if (profileMap[profile_id]) {
+    profileEmoji.textContent = profileMap[profile_id].emoji;
+    profileName.textContent = profileMap[profile_id].name;
+} else {
+    // For custom profiles, fetch from API
+    fetch(`${API_BASE}/profile/get-profiles`, {
+        headers: { "Authorization": "Bearer " + token }
+    })
+    .then(res => res.json())
+    .then(profiles => {
+        const currentProfile = profiles.find(p => p.profile_name === profile_id);
+        if (currentProfile) {
+            profileEmoji.textContent = currentProfile.emoji || '📦';
+            profileName.textContent = currentProfile.display_name || profile_id;
+        }
+    })
+    .catch(err => console.error('Error fetching profile:', err));
+}
+
+// ==================== CACHE DOM ELEMENTS ====================
+const itemForm = document.getElementById('itemForm');
+const itemName = document.getElementById('itemName');
+const itemQuantity = document.getElementById('itemQuantity');
+const expiryDate = document.getElementById('expiryDate');
+const storageType = document.getElementById('storageType');
+const addItemBtn = document.getElementById('addItemBtn');
+const fridgeBody = document.getElementById('fridgeBody');
+const freezerBody = document.getElementById('freezerBody');
+const fridgeCount = document.getElementById('fridgeCount');
+const freezerCount = document.getElementById('freezerCount');
+const fridgeEmpty = document.getElementById('fridgeEmpty');
+const freezerEmpty = document.getElementById('freezerEmpty');
+const shoppingSection = document.getElementById('shoppingSection');
+const shoppingList = document.getElementById('shoppingList');
+const shoppingCount = document.getElementById('shoppingCount');
+const loadingOverlay = document.getElementById('loadingOverlay');
+
+// State
+let isLoading = false;
+let items = [];
+let notifiedItems = new Set();
+
+// ==================== HELPER FUNCTIONS ====================
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast-message ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+function showLoading() {
+    loadingOverlay.classList.add('active');
+}
+
+function hideLoading() {
+    loadingOverlay.classList.remove('active');
+}
+
+function getStatusClass(status) {
+    const statusMap = {
+        'Expired': 'status-expired',
+        'Expiring Soon': 'status-expiring',
+        'Near Expiry': 'status-expiring',
+        'Low Stock': 'status-low',
+        'Out of Stock': 'status-out',
+        'Good': 'status-good'
+    };
+    return statusMap[status] || 'status-good';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Check if date is expired
+function isExpired(expiryDate) {
+    if (!expiryDate) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expiry = new Date(expiryDate);
+    expiry.setHours(0, 0, 0, 0);
+    return expiry < today;
+}
+
+// Calculate days difference
+function getDaysInfo(expiryDate) {
+    if (!expiryDate) return { text: '', class: '' };
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expiry = new Date(expiryDate);
+    expiry.setHours(0, 0, 0, 0);
+    
+    const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+        return { 
+            text: `(Expired ${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? 's' : ''} ago)`, 
+            class: 'days-expired' 
+        };
+    } else if (diffDays === 0) {
+        return { text: `(Expires TODAY!)`, class: 'days-expired' };
+    } else {
+        return { 
+            text: `(${diffDays} day${diffDays !== 1 ? 's' : ''} left)`, 
+            class: 'days-left' 
+        };
+    }
+}
+
+// Show expiry alert
+function showExpiryAlert(item) {
+    if (notifiedItems.has(item._id)) return;
+    
+    const expiryDate = new Date(item.expiry_date).toLocaleDateString();
+    const daysInfo = getDaysInfo(item.expiry_date);
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'toast-message error';
+    alertDiv.style.background = '#e74c3c';
+    alertDiv.style.fontWeight = 'bold';
+    alertDiv.style.animation = 'pulse-red 2s infinite';
+    alertDiv.innerHTML = `⚠️ EXPIRED: ${item.item_name} - ${daysInfo.text}`;
+    document.body.appendChild(alertDiv);
+    
+    notifiedItems.add(item._id);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 8000);
+}
+
+// ==================== API CALLS ====================
+async function addItem(event) {
+    event.preventDefault();
+    
+    if (!itemName.value || !itemQuantity.value || !storageType.value) {
+        showToast('Please fill all required fields', 'error');
+        return;
+    }
+    
+    addItemBtn.disabled = true;
+    addItemBtn.textContent = '⏳ Adding...';
+    
+    try {
+        const response = await fetch(`${API_BASE}/pantry/add-item`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({
+                item_name: itemName.value.trim(),
+                quantity: parseFloat(itemQuantity.value),
+                expiry_date: expiryDate.value || null,
+                storage_type: storageType.value,
+                profile_id: profile_id
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to add item');
+        }
+        
+        itemForm.reset();
+        itemQuantity.value = "1";
+        
+        showToast(data.message || 'Item added successfully');
+        await loadItems();
+        
+    } catch (error) {
+        console.error('Add item error:', error);
+        showToast(error.message || 'Server connection error', 'error');
+    } finally {
+        addItemBtn.disabled = false;
+        addItemBtn.textContent = '+ Add Item';
+    }
+}
+
+async function loadItems() {
+    if (isLoading) return;
+    
+    isLoading = true;
+    showLoading();
+    
+    try {
+        const response = await fetch(`${API_BASE}/pantry/get-items?profile_id=${profile_id}`, {
+            method: "GET",
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to load items');
+        }
+        
+        items = await response.json();
+        
+        // Process items
+        items.forEach(item => {
+            if (item.expiry_date) {
+                if (isExpired(item.expiry_date)) {
+                    item.status = 'Expired';
+                    showExpiryAlert(item);
+                }
+            }
+            
+            // Handle low stock
+            if (item.quantity <= 2 && item.quantity > 0 && item.status !== 'Expired') {
+                item.status = 'Low Stock';
+            } else if (item.quantity === 0) {
+                item.status = 'Out of Stock';
+            }
+        });
+        
+        displayItems(items);
+        generateShoppingList(items);
+        
+    } catch (error) {
+        console.error('Load items error:', error);
+        showToast('Could not load items', 'error');
+    } finally {
+        isLoading = false;
+        hideLoading();
+    }
+}
+
+async function changeQuantity(id, newQty) {
+    if (newQty < 0) return;
+    // Round to 1 decimal place to handle floating point
+    newQty = Math.round(newQty * 10) / 10;
+    
+    try {
+        const response = await fetch(`${API_BASE}/pantry/update-item/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({ quantity: newQty })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to update quantity');
+        }
+        
+        await loadItems();
+        
+    } catch (error) {
+        console.error('Update quantity error:', error);
+        showToast('Quantity update failed', 'error');
+    }
+}
+
+async function deleteItem(id) {
+    if (!confirm("Delete this item?")) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/pantry/delete-item/${id}`, {
+            method: "DELETE",
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to delete item');
+        }
+        
+        showToast('Item deleted successfully');
+        await loadItems();
+        
+    } catch (error) {
+        console.error('Delete item error:', error);
+        showToast('Delete failed', 'error');
+    }
+}
+
+// ==================== DISPLAY FUNCTIONS ====================
+function displayItems(items) {
+    fridgeBody.innerHTML = "";
+    freezerBody.innerHTML = "";
+    
+    let fridgeCountVal = 0;
+    let freezerCountVal = 0;
+    let fridgeHtml = "";
+    let freezerHtml = "";
+    
+    items.forEach(item => {
+        const statusClass = getStatusClass(item.status);
+        const expiryDisplay = item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : '-';
+        const daysInfo = item.expiry_date ? getDaysInfo(item.expiry_date) : { text: '', class: '' };
+        
+        const quantity = parseFloat(item.quantity);
+        
+        const quantityControl = `
+            <div class="quantity-control">
+                <button class="qty-btn" onclick="changeQuantity('${item._id}', ${quantity - 0.5})">-0.5</button>
+                <button class="qty-btn" onclick="changeQuantity('${item._id}', ${quantity - 1})">-1</button>
+                <input type="number" step="0.5" value="${quantity}" 
+                    class="quantity-input" 
+                    onchange="changeQuantity('${item._id}', parseFloat(this.value))"
+                    onkeypress="if(event.key === 'Enter') changeQuantity('${item._id}', parseFloat(this.value))">
+                <button class="qty-btn" onclick="changeQuantity('${item._id}', ${quantity + 1})">+1</button>
+                <button class="qty-btn" onclick="changeQuantity('${item._id}', ${quantity + 0.5})">+0.5</button>
+            </div>
+        `;
+        
+        const row = `
+            <tr>
+                <td><strong>${escapeHtml(item.item_name)}</strong></td>
+                <td>${quantityControl}</td>
+                <td>
+                    ${expiryDisplay}
+                    ${daysInfo.text ? `<span class="${daysInfo.class}">${daysInfo.text}</span>` : ''}
+                </td>
+                <td><span class="status-badge ${statusClass}">${item.status}</span></td>
+                <td>
+                    <button class="action-btn delete-btn" onclick="deleteItem('${item._id}')" title="Delete">🗑️</button>
+                </td>
+            </tr>
+        `;
+        
+        if (item.storage_type === "refrigerator") {
+            fridgeHtml += row;
+            fridgeCountVal++;
+        } else {
+            freezerHtml += row;
+            freezerCountVal++;
+        }
+    });
+    
+    if (fridgeHtml) {
+        fridgeBody.innerHTML = fridgeHtml;
+        fridgeEmpty.style.display = 'none';
+    } else {
+        fridgeEmpty.style.display = 'block';
+    }
+    
+    if (freezerHtml) {
+        freezerBody.innerHTML = freezerHtml;
+        freezerEmpty.style.display = 'none';
+    } else {
+        freezerEmpty.style.display = 'block';
+    }
+    
+    fridgeCount.textContent = fridgeCountVal + (fridgeCountVal === 1 ? ' item' : ' items');
+    freezerCount.textContent = freezerCountVal + (freezerCountVal === 1 ? ' item' : ' items');
+}
+
+function generateShoppingList(items) {
+    const shoppingItems = items.filter(item => 
+        item.status === 'Low Stock' || 
+        item.status === 'Out of Stock' || 
+        item.status === 'Expired'
+    );
+    
+    // Sort by priority: Expired first, then Low Stock, then Out of Stock
+    shoppingItems.sort((a, b) => {
+        const priority = { 'Expired': 1, 'Low Stock': 2, 'Out of Stock': 3 };
+        return (priority[a.status] || 99) - (priority[b.status] || 99);
+    });
+    
+    if (shoppingItems.length === 0) {
+        shoppingSection.style.display = 'none';
+        return;
+    }
+    
+    shoppingSection.style.display = 'block';
+    shoppingCount.textContent = shoppingItems.length + (shoppingItems.length === 1 ? ' item' : ' items');
+    
+    let shoppingHtml = '';
+    
+    shoppingItems.forEach(item => {
+        let reason = '';
+        let icon = '';
+        
+        if (item.status === 'Expired') {
+            reason = '🔴 EXPIRED';
+            icon = '⚠️';
+        } else if (item.status === 'Low Stock') {
+            reason = '🟡 Low stock';
+            icon = '📦';
+        } else if (item.status === 'Out of Stock') {
+            reason = '⚫ Out of stock';
+            icon = '❌';
+        }
+        
+        const expiryInfo = item.expiry_date && item.status === 'Expired' ? 
+            ` (Expired ${new Date(item.expiry_date).toLocaleDateString()})` : '';
+        
+        shoppingHtml += `
+            <div class="shopping-item">
+                <div class="shopping-item-left">
+                    <span class="shopping-item-name">${icon} ${escapeHtml(item.item_name)}${expiryInfo}</span>
+                    <span class="shopping-reason">${reason}</span>
+                </div>
+                <div>
+                    <span class="shopping-quantity">Qty: ${item.quantity}</span>
+                    <button class="restore-btn" onclick="restoreItem('${item._id}')">➕ Add 1</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    shoppingList.innerHTML = shoppingHtml;
+}
+
+async function restoreItem(id) {
+    try {
+        const item = items.find(i => i._id === id);
+        const newQty = (parseFloat(item.quantity) || 0) + 1;
+        await changeQuantity(id, newQty);
+        showToast('Added 1 item to pantry');
+    } catch (error) {
+        console.error('Restore item error:', error);
+    }
+}
+
+// ==================== SHOPPING LIST DOWNLOAD & EMAIL FUNCTIONS ====================
+function generateShoppingListHTML() {
+    const shoppingItems = items.filter(item => 
+        item.status === 'Low Stock' || 
+        item.status === 'Out of Stock' || 
+        item.status === 'Expired'
+    );
+    
+    const profileDisplayName = profileName.textContent || profile_id;
+    const currentDate = new Date().toLocaleDateString();
+    
+    let itemsHtml = '';
+    shoppingItems.forEach((item, index) => {
+        const reasonIcon = item.status === 'Expired' ? '🔴' : (item.status === 'Low Stock' ? '🟡' : '⚫');
+        itemsHtml += `
+            <tr style="background: ${index % 2 === 0 ? '#f9f9f9' : '#ffffff'};">
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">${index + 1}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>${escapeHtml(item.item_name)}</strong></td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.quantity}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : 'No expiry'}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">${reasonIcon} ${item.status}</td>
+             </tr>
+        `;
+    });
+    
+    return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Shopping List - ${profileDisplayName}</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+                .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+                h1 { color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+                .header { display: flex; justify-content: space-between; margin-bottom: 20px; color: #666; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th { background: #667eea; color: white; padding: 12px; text-align: left; }
+                .tips { margin-top: 30px; padding: 20px; background: #f0f8ff; border-radius: 8px; }
+                .tips h3 { color: #333; margin-top: 0; }
+                .tips ul { color: #666; line-height: 1.6; }
+                .footer { margin-top: 30px; text-align: center; color: #999; font-size: 12px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🛒 Shopping List</h1>
+                <div class="header">
+                    <span><strong>Profile:</strong> ${profileDisplayName}</span>
+                    <span><strong>Date:</strong> ${currentDate}</span>
+                    <span><strong>Total Items:</strong> ${shoppingItems.length}</span>
+                </div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Item Name</th>
+                            <th>Quantity</th>
+                            <th>Expiry Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml}
+                    </tbody>
+                </table>
+                
+                <div class="tips">
+                    <h3>📝 Shopping Tips:</h3>
+                    <ul>
+                        <li>🔴 Red items (Expired) - Replace immediately</li>
+                        <li>🟡 Yellow items (Low Stock) - Restock soon</li>
+                        <li>⚫ Black items (Out of Stock) - Add to cart</li>
+                        <li>Check expiry dates before purchasing</li>
+                    </ul>
+                </div>
+                
+                <div class="footer">
+                    Generated by Smart Pantry System · Keep your pantry organized!
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+}
+
+function downloadShoppingList() {
+    const shoppingItems = items.filter(item => 
+        item.status === 'Low Stock' || 
+        item.status === 'Out of Stock' || 
+        item.status === 'Expired'
+    );
+    
+    if (shoppingItems.length === 0) {
+        showToast('No items in shopping list to download', 'error');
+        return;
+    }
+    
+    const html = generateShoppingListHTML();
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shopping_list_${profile_id}_${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showToast('Shopping list downloaded successfully!');
+}
+
+async function emailShoppingList() {
+    const downloadBtn = document.getElementById('emailShoppingList');
+    const shoppingItems = items.filter(item => 
+        item.status === 'Low Stock' || 
+        item.status === 'Out of Stock' || 
+        item.status === 'Expired'
+    );
+    
+    if (shoppingItems.length === 0) {
+        showToast('No items in shopping list to email', 'error');
+        return;
+    }
+    
+    // Get user email from localStorage or prompt
+    let email = localStorage.getItem('userEmail');
+    if (!email) {
+        email = prompt('Please enter your email address to receive the shopping list:');
+        if (!email) return;
+        localStorage.setItem('userEmail', email);
+    }
+    
+    downloadBtn.disabled = true;
+    downloadBtn.innerHTML = '<span>⏳</span> Sending...';
+    
+    try {
+        // Call backend API to send email
+        const response = await fetch(`${API_BASE}/pantry/email-shopping-list`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({
+                email: email,
+                items: shoppingItems,
+                profile_name: profileName.textContent || profile_id
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to send email');
+        }
+        
+        showToast('Shopping list sent to your email!');
+    } catch (error) {
+        console.error('Email error:', error);
+        showToast('Failed to send email. Downloading instead...', 'error');
+        downloadShoppingList();
+    } finally {
+        downloadBtn.disabled = false;
+        downloadBtn.innerHTML = '<span>📧</span> Email List';
+    }
+}
+
+// ==================== PROFILE FUNCTIONS ====================
+function toggleProfile(event) {
+    event.stopPropagation();
+    document.getElementById('profileDropdown').classList.toggle('active');
+    document.getElementById('dropdownOverlay').classList.toggle('active');
+}
+
+function closeProfileDropdown() {
+    document.getElementById('profileDropdown').classList.remove('active');
+    document.getElementById('dropdownOverlay').classList.remove('active');
+}
+
+function handleExitPantry(event) {
+    event.preventDefault();
+    window.location.href = 'selection.html';
+}
+
+function handleLogout(event) {
+    event.preventDefault();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('username');
+    localStorage.removeItem('userEmail');
+    showToast('Logged out successfully');
+    setTimeout(() => {
+        window.location.href = 'login.html';
+    }, 1000);
+}
+
+// Check for expired items periodically
+function checkForExpiredItems() {
+    items.forEach(item => {
+        if (item.expiry_date && isExpired(item.expiry_date) && item.status !== 'Expired') {
+            item.status = 'Expired';
+            showExpiryAlert(item);
+            displayItems(items);
+            generateShoppingList(items);
+        }
+    });
+}
+
+// ==================== EVENT LISTENERS ====================
+itemForm.addEventListener('submit', addItem);
+
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('profileDropdown');
+    const icon = document.querySelector('.profile-icon');
+    
+    if (!dropdown.contains(event.target) && !icon.contains(event.target)) {
+        dropdown.classList.remove('active');
+        document.getElementById('dropdownOverlay').classList.remove('active');
+    }
+});
+
+// Auto-refresh every 30 seconds
+setInterval(loadItems, 30000);
+
+// Check for expired items every minute
+setInterval(checkForExpiredItems, 60000);
+
+// ==================== INITIAL LOAD ====================
+document.addEventListener("DOMContentLoaded", loadItems);
+</script>
+
+</body>
+</html>
