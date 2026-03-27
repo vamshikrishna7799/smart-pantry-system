@@ -169,9 +169,9 @@ def check_expiry_notifications():
             time.sleep(3600)
 
 # Start background thread for notifications
-notification_thread = threading.Thread(target=check_expiry_notifications, daemon=True)
-notification_thread.start()
-print("✅ Notification service started!")
+#notification_thread = threading.Thread(target=check_expiry_notifications, daemon=True)
+#notification_thread.start()
+#print("✅ Notification service started!")
 
 # Serve HTML files from frontend folder
 @app.route('/')
