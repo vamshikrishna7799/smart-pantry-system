@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create account · market basket</title>
     <style>
-        /* ----- FULL SCREEN BACKGROUND: different vegetables, fruits, grocery items together ----- */
         body {
             text-align: center;
             font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
@@ -273,7 +272,6 @@ async function registerUser() {
     const registerBtn = document.getElementById('registerBtn');
     const loadingAnimation = document.getElementById('loadingAnimation');
 
-    // Simple validation
     if (!username || !email || !password) {
         messageBox.textContent = 'All fields are required';
         messageBox.classList.add('show');
@@ -288,7 +286,6 @@ async function registerUser() {
         return;
     }
 
-    // Show loading
     registerBtn.disabled = true;
     registerBtn.style.opacity = '0.5';
     loadingAnimation.classList.add('show');
@@ -308,7 +305,6 @@ async function registerUser() {
 
         const data = await response.json();
 
-        // Hide loading
         registerBtn.disabled = false;
         registerBtn.style.opacity = '1';
         loadingAnimation.classList.remove('show');
@@ -317,7 +313,6 @@ async function registerUser() {
             messageBox.textContent = '✅ Registration successful! Redirecting to login...';
             messageBox.classList.add('show', 'success');
             
-            // Show transition overlay
             const overlay = document.getElementById('transitionOverlay');
             overlay.classList.add('active');
             

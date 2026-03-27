@@ -70,20 +70,20 @@ except Exception as e:
 from routes.auth_routes import auth_bp
 from routes.pantry_routes import pantry_bp
 from routes.profile_routes import profile_bp
-from routes.analytics_routes import analytics_bp
+# from routes.analytics_routes import analytics_bp
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/user')
 app.register_blueprint(pantry_bp, url_prefix='/api/pantry')
 app.register_blueprint(profile_bp, url_prefix='/api/profile')
-app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+# app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 
 # Import email service functions
 from services.email_service import send_expiry_alert, send_low_stock_alert
-from services.smart_timing import init_smart_timing
+#from services.smart_timing import init_smart_timing
 
 # Initialize smart timing service
-smart_timing_service = init_smart_timing(app)
+#smart_timing_service = init_smart_timing(app)
 
 # Background thread for expiry notifications
 def check_expiry_notifications():

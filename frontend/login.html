@@ -290,7 +290,6 @@ async function loginUser() {
     const loginBtn = document.getElementById('loginBtn');
     const transitionOverlay = document.getElementById('transitionOverlay');
 
-    // Validation
     if (!username || !password) {
         errorMsg.textContent = 'Please enter both username and password';
         errorMsg.classList.add('show');
@@ -298,13 +297,10 @@ async function loginUser() {
         return;
     }
 
-    // Show loading state
     loginBtn.disabled = true;
     loginBtn.textContent = 'Logging in...';
 
     try {
-        console.log('Attempting login for:', username);
-        
         const response = await fetch(`${API_BASE}/user/login`, {
             method: "POST",
             headers: {
@@ -318,59 +314,48 @@ async function loginUser() {
             })
         });
 
-        console.log('Login response status:', response.status);
         const data = await response.json();
-        console.log('Login response data:', data);
 
         if (response.status === 200) {
-            // Store token and user info
             localStorage.setItem("token", data.token);
             localStorage.setItem("user_id", data.user_id);
             localStorage.setItem("username", data.username);
             localStorage.setItem("userEmail", data.email);
             
-            // Show success message
             errorMsg.textContent = '✅ Login successful! Redirecting...';
             errorMsg.classList.add('show', 'success');
             errorMsg.style.background = 'rgba(76, 175, 80, 0.3)';
             
-            // Show popping food animation
             for (let i = 0; i < 8; i++) {
                 setTimeout(() => createFoodPop(), i * 100);
             }
             
-            // Show transition overlay
             transitionOverlay.classList.add('active');
             
-            // Redirect to selection page
             setTimeout(() => {
                 window.location.href = "selection.html";
             }, 1500);
         } else {
-            // Show error message
             errorMsg.textContent = data.message || 'Login failed';
             errorMsg.classList.add('show');
             errorMsg.style.background = 'rgba(255, 68, 68, 0.3)';
             setTimeout(() => errorMsg.classList.remove('show'), 3000);
             
-            // Reset button
             loginBtn.disabled = false;
             loginBtn.textContent = 'Login';
         }
     } catch (error) {
         console.error('Login error:', error);
-        errorMsg.textContent = 'Network error: Could not connect to server. Make sure backend is running.';
+        errorMsg.textContent = 'Network error: Could not connect to server.';
         errorMsg.classList.add('show');
         errorMsg.style.background = 'rgba(255, 68, 68, 0.3)';
         setTimeout(() => errorMsg.classList.remove('show'), 4000);
         
-        // Reset button
         loginBtn.disabled = false;
         loginBtn.textContent = 'Login';
     }
 }
 
-// Handle forgot password link
 document.getElementById('forgotPasswordLink').addEventListener('click', function(e) {
     e.preventDefault();
     const overlay = document.getElementById('transitionOverlay');
@@ -380,7 +365,6 @@ document.getElementById('forgotPasswordLink').addEventListener('click', function
     }, 400);
 });
 
-// Create popping food items
 function createFoodPop() {
     const container = document.getElementById('foodPopContainer');
     if (!container) return;
@@ -403,7 +387,6 @@ function createFoodPop() {
     }, 2500);
 }
 
-// Add enter key support
 document.getElementById('loginForm').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
@@ -411,14 +394,8 @@ document.getElementById('loginForm').addEventListener('keypress', function(e) {
     }
 });
 
-// Check if already logged in
 window.addEventListener('load', function() {
     const token = localStorage.getItem('token');
-    if (token) {
-        // Optional: Auto-redirect to selection if already logged in
-        // Uncomment the next line if you want this behavior
-        // window.location.href = 'selection.html';
-    }
 });
 </script>
 </body>

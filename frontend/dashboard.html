@@ -1374,12 +1374,12 @@ function generateShoppingListHTML() {
         const reasonIcon = item.status === 'Expired' ? '🔴' : (item.status === 'Low Stock' ? '🟡' : '⚫');
         itemsHtml += `
             <tr style="background: ${index % 2 === 0 ? '#f9f9f9' : '#ffffff'};">
-                <td style="padding: 12px; border-bottom: 1px solid #eee;">${index + 1}</td>
-                <td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>${escapeHtml(item.item_name)}</strong></td>
-                <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.quantity}</td>
-                <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : 'No expiry'}</td>
-                <td style="padding: 12px; border-bottom: 1px solid #eee;">${reasonIcon} ${item.status}</td>
-             </tr>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">${index + 1}<\/td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>${escapeHtml(item.item_name)}<\/strong><\/td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.quantity}<\/td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : 'No expiry'}<\/td>
+                <td style="padding: 12px; border-bottom: 1px solid #eee;">${reasonIcon} ${item.status}<\/td>
+             \u007d
         `;
     });
     
