@@ -1,4 +1,6 @@
 # app1.py
+import sys
+print("Starting app...")
 from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
@@ -546,4 +548,5 @@ if __name__ == '__main__':
         debug=Config.DEBUG,
         host=Config.HOST,
         port=Config.PORT
+        print("App loaded successfully")
     )
