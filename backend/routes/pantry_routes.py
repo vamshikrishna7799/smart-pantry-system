@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import pantry_items_collection, users_collection, profiles_collection
-from services.email_service import send_low_stock_alert, send_expiry_alert, send_shopping_list_email
+# Temporarily comment out expiry alert to fix startup
+# from services.email_service import send_low_stock_alert, send_expiry_alert, send_shopping_list_email
+from services.email_service import send_low_stock_alert, send_shopping_list_email
 from bson import ObjectId
 from datetime import datetime, timedelta
 
@@ -87,24 +89,24 @@ def add_item():
         
         result = pantry_items_collection.insert_one(new_item)
         
-        # Check if item is already expired and send notification
-        if expiry and expiry < datetime.utcnow():
-            user = users_collection.find_one({'_id': ObjectId(user_id)})
-            if user and user.get('email'):
-                send_expiry_alert(user['email'], new_item, 'expired')
-                pantry_items_collection.update_one(
-                    {'_id': result.inserted_id},
-                    {'$set': {'notification_sent': True}}
-                )
-        # Check if item is expiring soon (within 3 days)
-        elif expiry and expiry <= datetime.utcnow() + timedelta(days=3):
-            user = users_collection.find_one({'_id': ObjectId(user_id)})
-            if user and user.get('email'):
-                send_expiry_alert(user['email'], new_item, 'expiring')
-                pantry_items_collection.update_one(
-                    {'_id': result.inserted_id},
-                    {'$set': {'notification_sent': True}}
-                )
+        # Check if item is already expired and send notification - TEMPORARILY DISABLED
+        # if expiry and expiry < datetime.utcnow():
+        #     user = users_collection.find_one({'_id': ObjectId(user_id)})
+        #     if user and user.get('email'):
+        #         send_expiry_alert(user['email'], new_item, 'expired')
+        #         pantry_items_collection.update_one(
+        #             {'_id': result.inserted_id},
+        #             {'$set': {'notification_sent': True}}
+        #         )
+        # # Check if item is expiring soon (within 3 days)
+        # elif expiry and expiry <= datetime.utcnow() + timedelta(days=3):
+        #     user = users_collection.find_one({'_id': ObjectId(user_id)})
+        #     if user and user.get('email'):
+        #         send_expiry_alert(user['email'], new_item, 'expiring')
+        #         pantry_items_collection.update_one(
+        #             {'_id': result.inserted_id},
+        #             {'$set': {'notification_sent': True}}
+        #         )
         
         return jsonify({
             'message': 'Item added successfully',
@@ -228,25 +230,25 @@ def update_item(item_id):
                         {'$set': {'low_stock_notified': True}}
                     )
             
-            # Check for expiry alerts
-            if item.get('expiry_date'):
-                now = datetime.utcnow()
-                if item['expiry_date'] < now and not item.get('notification_sent'):
-                    user = users_collection.find_one({'_id': ObjectId(user_id)})
-                    if user and user.get('email'):
-                        send_expiry_alert(user['email'], item, 'expired')
-                        pantry_items_collection.update_one(
-                            {'_id': ObjectId(item_id)},
-                            {'$set': {'notification_sent': True}}
-                        )
-                elif item['expiry_date'] <= now + timedelta(days=3) and not item.get('notification_sent'):
-                    user = users_collection.find_one({'_id': ObjectId(user_id)})
-                    if user and user.get('email'):
-                        send_expiry_alert(user['email'], item, 'expiring')
-                        pantry_items_collection.update_one(
-                            {'_id': ObjectId(item_id)},
-                            {'$set': {'notification_sent': True}}
-                        )
+            # Check for expiry alerts - TEMPORARILY DISABLED
+            # if item.get('expiry_date'):
+            #     now = datetime.utcnow()
+            #     if item['expiry_date'] < now and not item.get('notification_sent'):
+            #         user = users_collection.find_one({'_id': ObjectId(user_id)})
+            #         if user and user.get('email'):
+            #             send_expiry_alert(user['email'], item, 'expired')
+            #             pantry_items_collection.update_one(
+            #                 {'_id': ObjectId(item_id)},
+            #                 {'$set': {'notification_sent': True}}
+            #             )
+            #     elif item['expiry_date'] <= now + timedelta(days=3) and not item.get('notification_sent'):
+            #         user = users_collection.find_one({'_id': ObjectId(user_id)})
+            #         if user and user.get('email'):
+            #             send_expiry_alert(user['email'], item, 'expiring')
+            #             pantry_items_collection.update_one(
+            #                 {'_id': ObjectId(item_id)},
+            #                 {'$set': {'notification_sent': True}}
+            #             )
             
             return jsonify({'message': 'Item updated successfully'}), 200
         else:
