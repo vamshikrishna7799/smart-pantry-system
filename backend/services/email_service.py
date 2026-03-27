@@ -229,4 +229,5 @@ def send_shopping_list_email(recipient, items, profile_name):
         
     except Exception as e:
         print(f"❌ Shopping list error: {e}")
-        return False
+        return False#   t r i g g e r   r e d e p l o y  
+ 
