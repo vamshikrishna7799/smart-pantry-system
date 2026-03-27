@@ -19,26 +19,21 @@ def register():
         email = data.get('email')
         password = data.get('password')
         
-        # Validate input
         if not username or not email or not password:
             return jsonify({'message': 'All fields are required'}), 400
         
-        # Validate username
         if len(username) < 3:
             return jsonify({'message': 'Username must be at least 3 characters'}), 400
         if not re.match(r'^[a-zA-Z0-9_]+$', username):
             return jsonify({'message': 'Username can only contain letters, numbers, and underscores'}), 400
         
-        # Validate email
         email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
         if not re.match(email_regex, email):
             return jsonify({'message': 'Please enter a valid email address'}), 400
         
-        # Validate password
         if len(password) < 6:
             return jsonify({'message': 'Password must be at least 6 characters'}), 400
         
-        # Check if user already exists
         existing_user = users_collection.find_one({
             '$or': [
                 {'username': username},
@@ -52,11 +47,9 @@ def register():
             else:
                 return jsonify({'message': 'Email already registered! Please login.'}), 409
         
-        # Hash password with bcrypt
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
         
-        # Create new user
         new_user = {
             'username': username,
             'email': email,
@@ -71,7 +64,6 @@ def register():
         
         result = users_collection.insert_one(new_user)
         
-        # Create all 5 default profiles with emojis
         default_profiles = [
             {'profile_name': 'home', 'display_name': 'Home Pantry', 'emoji': '🏠'},
             {'profile_name': 'office', 'display_name': 'Office Pantry', 'emoji': '🏢'},
@@ -109,13 +101,11 @@ def login():
         if not username or not password:
             return jsonify({'message': 'Username and password required'}), 400
         
-        # Find user by username
         user = users_collection.find_one({'username': username})
         
         if not user:
             return jsonify({'message': 'Invalid username or password'}), 401
         
-        # Verify password using bcrypt
         stored_hash = user.get('password')
         if isinstance(stored_hash, str):
             stored_hash = stored_hash.encode('utf-8')
@@ -147,18 +137,14 @@ def send_otp():
         if not email:
             return jsonify({'message': 'Email required'}), 400
         
-        # Check if user exists
         user = users_collection.find_one({'email': email})
         if not user:
             return jsonify({'message': 'Email not registered'}), 404
         
-        # Delete any existing OTPs for this email
         otp_collection.delete_many({'email': email})
         
-        # Generate OTP
         otp = ''.join(random.choices(string.digits, k=6))
         
-        # Store OTP
         otp_data = {
             'email': email,
             'otp': otp,
@@ -169,7 +155,6 @@ def send_otp():
         }
         otp_collection.insert_one(otp_data)
         
-        # Send OTP via email
         if send_otp_email(email, otp):
             return jsonify({
                 'message': 'OTP sent successfully',
@@ -180,51 +165,6 @@ def send_otp():
             
     except Exception as e:
         print(f"Send OTP error: {e}")
-        return jsonify({'message': 'Server error'}), 500
-
-@auth_bp.route('/forgot-password/resend-otp', methods=['POST'])
-def resend_otp():
-    """Resend OTP for password reset"""
-    try:
-        data = request.json
-        email = data.get('email')
-        
-        if not email:
-            return jsonify({'message': 'Email required'}), 400
-        
-        # Check if user exists
-        user = users_collection.find_one({'email': email})
-        if not user:
-            return jsonify({'message': 'Email not registered'}), 404
-        
-        # Delete any existing OTPs for this email
-        otp_collection.delete_many({'email': email})
-        
-        # Generate new OTP
-        otp = ''.join(random.choices(string.digits, k=6))
-        
-        # Store new OTP
-        otp_data = {
-            'email': email,
-            'otp': otp,
-            'created_at': datetime.utcnow(),
-            'expires_at': datetime.utcnow() + timedelta(minutes=10),
-            'attempts': 0,
-            'verified': False
-        }
-        otp_collection.insert_one(otp_data)
-        
-        # Send OTP via email
-        if send_otp_email(email, otp):
-            return jsonify({
-                'message': 'OTP resent successfully',
-                'email': email
-            }), 200
-        else:
-            return jsonify({'message': 'Failed to resend OTP'}), 500
-            
-    except Exception as e:
-        print(f"Resend OTP error: {e}")
         return jsonify({'message': 'Server error'}), 500
 
 @auth_bp.route('/forgot-password/verify-otp', methods=['POST'])
@@ -238,7 +178,6 @@ def verify_otp():
         if not email or not otp:
             return jsonify({'message': 'Email and OTP required'}), 400
         
-        # Find valid OTP
         otp_record = otp_collection.find_one({
             'email': email,
             'expires_at': {'$gt': datetime.utcnow()}
@@ -247,12 +186,10 @@ def verify_otp():
         if not otp_record:
             return jsonify({'message': 'No valid OTP found. Please request again.'}), 400
         
-        # Check attempts
         if otp_record.get('attempts', 0) >= 3:
             otp_collection.delete_one({'_id': otp_record['_id']})
             return jsonify({'message': 'Too many failed attempts. Please request new OTP.'}), 400
         
-        # Verify OTP
         if otp_record['otp'] != otp:
             otp_collection.update_one(
                 {'_id': otp_record['_id']},
@@ -263,7 +200,6 @@ def verify_otp():
                 'message': f'Invalid OTP. {remaining} attempts remaining.'
             }), 400
         
-        # Mark as verified
         otp_collection.update_one(
             {'_id': otp_record['_id']},
             {'$set': {'verified': True}}
@@ -290,7 +226,6 @@ def reset_password():
         if len(new_password) < 6:
             return jsonify({'message': 'Password must be at least 6 characters'}), 400
         
-        # Verify OTP again and check if verified
         otp_record = otp_collection.find_one({
             'email': email,
             'otp': otp,
@@ -301,11 +236,9 @@ def reset_password():
         if not otp_record:
             return jsonify({'message': 'Invalid or unverified OTP'}), 400
         
-        # Hash new password
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), salt)
         
-        # Update password
         result = users_collection.update_one(
             {'email': email},
             {'$set': {
@@ -317,7 +250,6 @@ def reset_password():
         if result.modified_count == 0:
             return jsonify({'message': 'User not found'}), 404
         
-        # Delete used OTP
         otp_collection.delete_many({'email': email})
         
         return jsonify({'message': 'Password updated successfully'}), 200
@@ -336,12 +268,10 @@ def recover_username():
         if not email:
             return jsonify({'message': 'Email required'}), 400
         
-        # Validate email format
         email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
         if not re.match(email_regex, email):
             return jsonify({'message': 'Please enter a valid email address'}), 400
         
-        # Find user by email
         user = users_collection.find_one({'email': email})
         
         if not user:
@@ -368,7 +298,6 @@ def update_username():
         if not email or not new_username:
             return jsonify({'message': 'Email and new username required'}), 400
         
-        # Validate username
         if len(new_username) < 3:
             return jsonify({'message': 'Username must be at least 3 characters'}), 400
         
@@ -378,12 +307,10 @@ def update_username():
         if not re.match(r'^[a-zA-Z0-9_]+$', new_username):
             return jsonify({'message': 'Username can only contain letters, numbers, and underscores'}), 400
         
-        # Check if username already exists
         existing_user = users_collection.find_one({'username': new_username})
         if existing_user:
             return jsonify({'message': 'Username already taken. Please choose another.'}), 409
         
-        # Update username
         result = users_collection.update_one(
             {'email': email},
             {'$set': {
