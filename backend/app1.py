@@ -1,6 +1,4 @@
 # app1.py
-import sys
-print("Starting app...")
 from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
@@ -72,41 +70,35 @@ except Exception as e:
 from routes.auth_routes import auth_bp
 from routes.pantry_routes import pantry_bp
 from routes.profile_routes import profile_bp
-#from routes.analytics_routes import analytics_bp
+# from routes.analytics_routes import analytics_bp
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/user')
 app.register_blueprint(pantry_bp, url_prefix='/api/pantry')
 app.register_blueprint(profile_bp, url_prefix='/api/profile')
-#app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+# app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 
 # Import email service functions
 from services.email_service import send_expiry_alert, send_low_stock_alert
-#from services.smart_timing import init_smart_timing
+# from services.smart_timing import init_smart_timing
 
 # Initialize smart timing service
-#smart_timing_service = init_smart_timing(app)
+# smart_timing_service = init_smart_timing(app)
 
 # Background thread for expiry notifications
 def check_expiry_notifications():
     """Background thread to check for expiring items and send notifications"""
-    with app.app_context():  # Create application context for the thread
+    with app.app_context():
         while True:
             try:
                 print("🔍 Checking for expired and expiring items...")
-                # Get current time
                 now = datetime.utcnow()
                 
-                # Find items expiring in next 3 days
                 expiring_soon = list(pantry_items_collection.find({
-                    'expiry_date': {
-                        '$gte': now,
-                        '$lte': now + timedelta(days=3)
-                    },
+                    'expiry_date': {'$gte': now, '$lte': now + timedelta(days=3)},
                     'notification_sent': {'$ne': True}
                 }))
                 
-                # Find expired items
                 expired = list(pantry_items_collection.find({
                     'expiry_date': {'$lt': now},
                     'notification_sent': {'$ne': True}
@@ -114,7 +106,6 @@ def check_expiry_notifications():
                 
                 print(f"Found {len(expiring_soon)} expiring soon, {len(expired)} expired items")
                 
-                # Send notifications for expiring items
                 for item in expiring_soon:
                     user = users_collection.find_one({'_id': item['user_id']})
                     if user and user.get('email'):
@@ -128,7 +119,6 @@ def check_expiry_notifications():
                         except Exception as e:
                             print(f"❌ Failed to send expiring notification: {e}")
                 
-                # Send notifications for expired items
                 for item in expired:
                     user = users_collection.find_one({'_id': item['user_id']})
                     if user and user.get('email'):
@@ -142,7 +132,6 @@ def check_expiry_notifications():
                         except Exception as e:
                             print(f"❌ Failed to send expired notification: {e}")
                 
-                # Check for low stock items (quantity <= 2)
                 low_stock = list(pantry_items_collection.find({
                     'quantity': {'$lte': 2, '$gt': 0},
                     'low_stock_notified': {'$ne': True}
@@ -166,14 +155,13 @@ def check_expiry_notifications():
             except Exception as e:
                 print(f"Error in notification thread: {e}")
             
-            # Sleep for 1 hour before next check
             print("😴 Notification thread sleeping for 1 hour...")
             time.sleep(3600)
 
 # Start background thread for notifications
-#notification_thread = threading.Thread(target=check_expiry_notifications, daemon=True)
-#notification_thread.start()
-#print("✅ Notification service started!")
+# notification_thread = threading.Thread(target=check_expiry_notifications, daemon=True)
+# notification_thread.start()
+# print("✅ Notification service started!")
 
 # Serve HTML files from frontend folder
 @app.route('/')
@@ -198,14 +186,12 @@ def check_alerts_timing():
     """Check if current time is optimal for sending alerts"""
     current_hour = datetime.now().hour
     
-    # Morning alerts (8 AM)
     if 8 <= current_hour <= 9:
         return jsonify({
             'should_send': True, 
             'reason': 'Morning digest time',
             'optimal_time': '8:00 AM'
         }), 200
-    # Evening alerts (6 PM)
     elif 18 <= current_hour <= 19:
         return jsonify({
             'should_send': True, 
@@ -227,17 +213,14 @@ def location_based_alerts():
         data = request.json
         user_location = data.get('location', 'unknown')
         
-        # This would integrate with maps API in production
         nearby_stores = [
             {'name': 'Walmart', 'distance': 0.5, 'address': '123 Main St'},
             {'name': 'Target', 'distance': 1.2, 'address': '456 Oak Ave'},
             {'name': 'Whole Foods', 'distance': 2.0, 'address': '789 Pine Rd'}
         ]
         
-        # Filter stores within 1 mile
         nearby = [store for store in nearby_stores if store['distance'] < 1.0]
         
-        # Get user's shopping list items
         user_id = get_jwt_identity()
         shopping_items = list(pantry_items_collection.find({
             'user_id': ObjectId(user_id),
@@ -282,7 +265,6 @@ def weekly_digest():
         user_id = get_jwt_identity()
         profile_id = request.args.get('profile_id')
         
-        # Get items expiring in next 7 days
         now = datetime.utcnow()
         week_later = now + timedelta(days=7)
         
@@ -312,10 +294,7 @@ def weekly_digest():
                 'storage': item.get('storage_type', 'Unknown')
             })
         
-        # Sort by days left (soonest first)
         digest['items'].sort(key=lambda x: x['expires_in'])
-        
-        # Add summary statistics
         digest['urgent'] = len([i for i in digest['items'] if i['expires_in'] <= 2])
         digest['soon'] = len([i for i in digest['items'] if 2 < i['expires_in'] <= 5])
         digest['later'] = len([i for i in digest['items'] if i['expires_in'] > 5])
@@ -361,28 +340,20 @@ def update_notification_preferences():
 @app.route('/api/test/check-expiry')
 def force_expiry_check():
     try:
-        # Run the check in a separate thread with app context
         def run_check():
             with app.app_context():
-                # Call the check function directly
                 now = datetime.utcnow()
                 
-                # Find items expiring in next 3 days
                 expiring_soon = list(pantry_items_collection.find({
-                    'expiry_date': {
-                        '$gte': now,
-                        '$lte': now + timedelta(days=3)
-                    },
+                    'expiry_date': {'$gte': now, '$lte': now + timedelta(days=3)},
                     'notification_sent': {'$ne': True}
                 }))
                 
-                # Find expired items
                 expired = list(pantry_items_collection.find({
                     'expiry_date': {'$lt': now},
                     'notification_sent': {'$ne': True}
                 }))
                 
-                # Send notifications for expiring items
                 for item in expiring_soon:
                     user = users_collection.find_one({'_id': item['user_id']})
                     if user and user.get('email'):
@@ -392,7 +363,6 @@ def force_expiry_check():
                             {'$set': {'notification_sent': True}}
                         )
                 
-                # Send notifications for expired items
                 for item in expired:
                     user = users_collection.find_one({'_id': item['user_id']})
                     if user and user.get('email'):
@@ -402,7 +372,6 @@ def force_expiry_check():
                             {'$set': {'notification_sent': True}}
                         )
                 
-                # Check for low stock items
                 low_stock = list(pantry_items_collection.find({
                     'quantity': {'$lte': 2, '$gt': 0},
                     'low_stock_notified': {'$ne': True}
@@ -428,7 +397,6 @@ def force_expiry_check():
 def test_email():
     """Test endpoint to verify email configuration"""
     try:
-        # Create a test item
         test_item = {
             'name': 'Test Item',
             'quantity': 1,
@@ -436,7 +404,6 @@ def test_email():
             'profile_id': 'test'
         }
         
-        # Send test email to yourself
         result = send_expiry_alert(app.config['MAIL_USERNAME'], test_item, 'expiring')
         
         if result:
@@ -467,7 +434,6 @@ def notification_status():
             'preferred_time_evening': '18:00'
         })
         
-        # Get today's notification count
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         notifications_sent = pantry_items_collection.count_documents({
             'user_id': ObjectId(user_id),
@@ -496,18 +462,16 @@ def send_digest_now():
     try:
         user_id = get_jwt_identity()
         data = request.json
-        digest_type = data.get('type', 'morning')  # morning, evening, or weekly
+        digest_type = data.get('type', 'morning')
         
         user = users_collection.find_one({'_id': ObjectId(user_id)})
         
         if not user or not user.get('email'):
             return jsonify({'message': 'No email address found'}), 400
         
-        # Get relevant items
         now = datetime.utcnow()
         
         if digest_type == 'morning':
-            # Get expiring items
             items = list(pantry_items_collection.find({
                 'user_id': ObjectId(user_id),
                 'expiry_date': {'$lte': now + timedelta(days=3), '$gt': now},
@@ -515,21 +479,18 @@ def send_digest_now():
             }))
             
         elif digest_type == 'evening':
-            # Get low stock items
             items = list(pantry_items_collection.find({
                 'user_id': ObjectId(user_id),
                 'quantity': {'$lte': 2, '$gt': 0},
                 'status': 'active'
             }))
             
-        else:  # weekly
-            # Get weekly stats
+        else:
             items = list(pantry_items_collection.find({
                 'user_id': ObjectId(user_id),
                 'status': 'active'
             }))
         
-        # Send email
         if items:
             return jsonify({
                 'message': f'Digest would be sent with {len(items)} items',
@@ -548,5 +509,4 @@ if __name__ == '__main__':
         debug=Config.DEBUG,
         host=Config.HOST,
         port=Config.PORT
-        print("App loaded successfully")
     )
