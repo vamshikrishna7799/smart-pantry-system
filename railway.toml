@@ -2,5 +2,5 @@
 rootDirectory = "backend"
 
 [deploy]
-startCommand = "cd .. && cd backend && gunicorn app1:app"
+startCommand = "gunicorn app1:app"
 restartPolicyType = "ON_FAILURE"
