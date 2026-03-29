@@ -1,6 +1,3 @@
-[build]
-rootDirectory = "backend"
-
 [deploy]
-startCommand = "gunicorn app1:app"
+startCommand = "gunicorn --chdir backend app1:app"
 restartPolicyType = "ON_FAILURE"
