@@ -229,9 +229,9 @@ This project is licensed under the MIT License.
 
 For queries or suggestions:
 
-📧 Email: your-email@example.com
+📧 Email: vamshispersonal79@example.com
 
-🔗 GitHub: https://github.com/your-username
+🔗 GitHub: https://github.com/vamshikrishna7799
 
 ---
 
